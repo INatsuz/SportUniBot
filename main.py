@@ -45,28 +45,27 @@ def book_court():
         today = date.today()
         print(today)
         delta = target_date.date() - today
-        print(delta.days)
-        print((target_date.weekday() + 2) % 7)
-        print((today.weekday() + 2) % 7)
-        print("Weeks away:", int(delta.days / 7) + 1 if (target_date.weekday() + 2) % 7 < (today.weekday() + 2) % 7 else 0)
+        weeks_away = int(delta.days / 7) + 1 if (target_date.weekday() + 2) % 7 < (today.weekday() + 2) % 7 else 0
+        print("Weeks away:", weeks_away)
+        browser.get(f"https://www.tuni.fi/sportuni/omasivu/?page=selection&lang=en&type=2&area=1&week={weeks_away}")
 
     try_to_book(target_date)
 
 
 if __name__ == '__main__':
 
-    book_court()
 
-    # chrome_options = Options()
-    # chrome_options.add_argument("--start-maximized")
-    #
-    # browser = webdriver.Chrome(options=chrome_options)
-    # browser.get("https://www.tuni.fi/sportuni/omasivu/?page=selection&lang=en&type=2&area=1&week=0")
-    # el = browser.find_element(By.XPATH, "//a[normalize-space(text()) = 'Sign in']")
-    # if el:
-    #     browser.execute_script("arguments[0].click()", el)
-    #     login()
-    # else:
-    #     print("Logged in 1")
+    chrome_options = Options()
+    chrome_options.add_argument("--start-maximized")
+
+    browser = webdriver.Chrome(options=chrome_options)
+    browser.get("https://www.tuni.fi/sportuni/omasivu/?page=selection&lang=en&type=2&area=1&week=0")
+    el = browser.find_element(By.XPATH, "//a[normalize-space(text()) = 'Sign in']")
+    if el:
+        browser.execute_script("arguments[0].click()", el)
+        login()
+        book_court()
+    else:
+        print("Logged in 1")
 
     input()
