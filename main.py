@@ -1,25 +1,29 @@
+from datetime import date, datetime
+
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-# from selenium.common.exceptions import WebDriverException
-from selenium.webdriver.chrome.options import Options
-
-from datetime import date, datetime
 
 WEEKDAY_ORDER = [("Saturday", "Sat"), ("Sunday", "Sun"), ("Monday", "Mon"), ("Tuesday", "Tue"), ("Wednesday", "Wed"), ("Thursday", "Thu"), ("Friday", "Fri")]
 
+EMAIL = "vasco.raminhos@tuni.fi"
+PASSWORD = "VRaminhos25.09.1999"
 
 def login():
     email_input = browser.find_element(By.XPATH, '//*[@id="i0116"]')
-    email_input.send_keys(input("Insert your email: "))
+    # email_input.send_keys(input("Insert your email: "))
+    email_input.send_keys(EMAIL)
 
     browser.find_element(By.ID, "idSIButton9").click()
 
     WebDriverWait(browser, 10).until(EC.staleness_of(email_input))
 
     password_input = browser.find_element(By.XPATH, '//*[@id="i0118"]')
-    password_input.send_keys(input("Insert password: "))
+    # password_input.send_keys(input("Insert password: "))
+    password_input.send_keys(PASSWORD)
 
     browser.find_element(By.ID, "idSIButton9").click()
 
@@ -42,18 +46,27 @@ def book_court():
     print(target_date)
 
     def try_to_book(target_date):
+        weekday_index = (target_date.weekday() + 2) % 7
+        title_xpath = f'//li[normalize-space(text()) = "{WEEKDAY_ORDER[weekday_index][1]} {target_date.day}.{target_date.month}."]/following-sibling::li'
+        print(WEEKDAY_ORDER[weekday_index][1], ":", target_date.day)
         today = date.today()
         print(today)
         delta = target_date.date() - today
-        weeks_away = int(delta.days / 7) + 1 if (target_date.weekday() + 2) % 7 < (today.weekday() + 2) % 7 else 0
+        weeks_away = int(delta.days / 7) + 1 if weekday_index < (today.weekday() + 2) % 7 else 0
         print("Weeks away:", weeks_away)
         browser.get(f"https://www.tuni.fi/sportuni/omasivu/?page=selection&lang=en&type=2&area=1&week={weeks_away}")
+        li_el = WebDriverWait(browser, 10).until(EC.presence_of_element_located((By.XPATH, title_xpath)))
+        print(title_xpath)
+        if li_el.find_element(By.TAG_NAME, "a"):
+            print("Is a bookable time")
+        else:
+            print("It's a title")
 
     try_to_book(target_date)
 
 
 if __name__ == '__main__':
-
+    # book_court()
 
     chrome_options = Options()
     chrome_options.add_argument("--start-maximized")
