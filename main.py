@@ -1,5 +1,7 @@
 from datetime import date, datetime
 
+import os
+
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -9,21 +11,16 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 WEEKDAY_ORDER = [("Saturday", "Sat"), ("Sunday", "Sun"), ("Monday", "Mon"), ("Tuesday", "Tue"), ("Wednesday", "Wed"), ("Thursday", "Thu"), ("Friday", "Fri")]
 
-EMAIL = "vasco.raminhos@tuni.fi"
-PASSWORD = "VRaminhos25.09.1999"
-
 def login():
     email_input = browser.find_element(By.XPATH, '//*[@id="i0116"]')
-    # email_input.send_keys(input("Insert your email: "))
-    email_input.send_keys(EMAIL)
+    email_input.send_keys(os.environ.get('EMAIL'))
 
     browser.find_element(By.ID, "idSIButton9").click()
 
     WebDriverWait(browser, 10).until(EC.staleness_of(email_input))
 
     password_input = browser.find_element(By.XPATH, '//*[@id="i0118"]')
-    # password_input.send_keys(input("Insert password: "))
-    password_input.send_keys(PASSWORD)
+    password_input.send_keys(os.environ.get('PASSWORD'))
 
     browser.find_element(By.ID, "idSIButton9").click()
 
@@ -48,6 +45,8 @@ def book_court():
     def try_to_book(target_date):
         weekday_index = (target_date.weekday() + 2) % 7
         title_xpath = f'//li[normalize-space(text()) = "{WEEKDAY_ORDER[weekday_index][1]} {target_date.day}.{target_date.month}."]/following-sibling::li'
+        link_xpath = f'//li[@class="ui-li-has-icon"]/a'
+        span_xpath = f'//li[@class="ui-li-has-icon"]/a/span/text()'
         print(WEEKDAY_ORDER[weekday_index][1], ":", target_date.day)
         today = date.today()
         print(today)
@@ -55,12 +54,17 @@ def book_court():
         weeks_away = int(delta.days / 7) + 1 if weekday_index < (today.weekday() + 2) % 7 else 0
         print("Weeks away:", weeks_away)
         browser.get(f"https://www.tuni.fi/sportuni/omasivu/?page=selection&lang=en&type=2&area=1&week={weeks_away}")
-        li_el = WebDriverWait(browser, 10).until(EC.presence_of_element_located((By.XPATH, title_xpath)))
-        print(title_xpath)
-        if li_el.find_element(By.TAG_NAME, "a"):
-            print("Is a bookable time")
-        else:
-            print("It's a title")
+        # li_el = WebDriverWait(browser, 10).until(EC.presence_of_element_located((By.XPATH, title_xpath)))
+        all_link_elements = browser.find_elements(By.XPATH, link_xpath)
+        all_span_elements = browser.find_elements(By.XPATH, span_xpath)
+        # print(all_link_elements)
+        for i, element in enumerate(all_link_elements):
+            print(all_span_elements[i].get_attribute("innerHTML"))
+        # print(title_xpath)
+        # if li_el.find_element(By.TAG_NAME, "a"):
+        #     print("Is a bookable time")
+        # else:
+        #     print("It's a title")
 
     try_to_book(target_date)
 
