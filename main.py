@@ -44,27 +44,22 @@ def book_court():
 
     def try_to_book(target_date):
         weekday_index = (target_date.weekday() + 2) % 7
-        title_xpath = f'//li[normalize-space(text()) = "{WEEKDAY_ORDER[weekday_index][1]} {target_date.day}.{target_date.month}."]/following-sibling::li'
-        link_xpath = f'//li[@class="ui-li-has-icon"]/a'
-        span_xpath = f'//li[@class="ui-li-has-icon"]/a/span/text()'
-        print(WEEKDAY_ORDER[weekday_index][1], ":", target_date.day)
         today = date.today()
-        print(today)
         delta = target_date.date() - today
         weeks_away = int(delta.days / 7) + 1 if weekday_index < (today.weekday() + 2) % 7 else 0
+        print(WEEKDAY_ORDER[weekday_index][1], ":", target_date.day)
+        print(today)
         print("Weeks away:", weeks_away)
+
         browser.get(f"https://www.tuni.fi/sportuni/omasivu/?page=selection&lang=en&type=2&area=1&week={weeks_away}")
-        # li_el = WebDriverWait(browser, 10).until(EC.presence_of_element_located((By.XPATH, title_xpath)))
+
+        link_xpath = f'//li[@class="ui-li-has-icon"]/a'
+        span_xpath = f'//li[@class="ui-li-has-icon"]/a/span'
+
         all_link_elements = browser.find_elements(By.XPATH, link_xpath)
-        all_span_elements = browser.find_elements(By.XPATH, span_xpath)
-        # print(all_link_elements)
         for i, element in enumerate(all_link_elements):
-            print(all_span_elements[i].get_attribute("innerHTML"))
-        # print(title_xpath)
-        # if li_el.find_element(By.TAG_NAME, "a"):
-        #     print("Is a bookable time")
-        # else:
-        #     print("It's a title")
+            span_el = element.find_element(By.XPATH, "span")
+            print(element.text + " : " + span_el.get_attribute("innerHTML"))
 
     try_to_book(target_date)
 
