@@ -1,26 +1,33 @@
-from datetime import date, datetime
-
 import os
+import re
+from datetime import date, datetime
+from time import sleep
 
+from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-WEEKDAY_ORDER = [("Saturday", "Sat"), ("Sunday", "Sun"), ("Monday", "Mon"), ("Tuesday", "Tue"), ("Wednesday", "Wed"), ("Thursday", "Thu"), ("Friday", "Fri")]
+from random import randint
+
+load_dotenv()
+
+WEEKDAY_ORDER = [("Monday", "Mon"), ("Tuesday", "Tue"), ("Wednesday", "Wed"), ("Thursday", "Thu"), ("Friday", "Fri"), ("Saturday", "Sat"), ("Sunday", "Sun")]
 
 def login():
-    email_input = browser.find_element(By.XPATH, '//*[@id="i0116"]')
-    email_input.send_keys(os.environ.get('EMAIL'))
+    # email_input = browser.find_element(By.XPATH, '//*[@id="i0116"]')
+    email_input = WebDriverWait(browser, 10).until(EC.presence_of_element_located((By.XPATH, '//*[@id="i0116"]')))
+    email_input.send_keys(os.getenv("EMAIL"))
 
-    browser.find_element(By.ID, "idSIButton9").click()
+    # browser.find_element(By.ID, "idSIButton9").click()
+    WebDriverWait(browser, 10).until(EC.presence_of_element_located((By.ID, "idSIButton9"))).click()
 
     WebDriverWait(browser, 10).until(EC.staleness_of(email_input))
 
     password_input = browser.find_element(By.XPATH, '//*[@id="i0118"]')
-    password_input.send_keys(os.environ.get('PASSWORD'))
+    password_input.send_keys(os.getenv('PASSWORD'))
 
     browser.find_element(By.ID, "idSIButton9").click()
 
@@ -43,30 +50,43 @@ def book_court():
     print(target_date)
 
     def try_to_book(target_date):
-        weekday_index = (target_date.weekday() + 2) % 7
+        weekday_index = target_date.weekday()
         today = date.today()
         delta = target_date.date() - today
-        weeks_away = int(delta.days / 7) + 1 if weekday_index < (today.weekday() + 2) % 7 else 0
+        weeks_away = int(delta.days / 7) + 1 if weekday_index < today.weekday() else 0
         print(WEEKDAY_ORDER[weekday_index][1], ":", target_date.day)
         print(today)
         print("Weeks away:", weeks_away)
 
-        browser.get(f"https://www.tuni.fi/sportuni/omasivu/?page=selection&lang=en&type=2&area=1&week={weeks_away}")
+        regex_string = rf"{target_date.strftime('%H:%M')}\sBook\s(sports\shall|court)\s:\s{WEEKDAY_ORDER[weekday_index][1]}\s{target_date.day}.{target_date.month}."
+        print("Regex: " + regex_string)
+
+        browser.get(f'https://www.tuni.fi/sportuni/omasivu/?page=selection&lang=en&type=2&area=1&week={weeks_away}')
 
         link_xpath = f'//li[@class="ui-li-has-icon"]/a'
-        span_xpath = f'//li[@class="ui-li-has-icon"]/a/span'
-
         all_link_elements = browser.find_elements(By.XPATH, link_xpath)
         for i, element in enumerate(all_link_elements):
             span_el = element.find_element(By.XPATH, "span")
+
+            string_to_search = element.text + " : " + span_el.get_attribute("innerHTML")
             print(element.text + " : " + span_el.get_attribute("innerHTML"))
 
-    try_to_book(target_date)
+            match = re.search(regex_string, string_to_search)
+            if match is not None:
+                print("This is available")
+                element.click()
+                booking_link = WebDriverWait(browser, 10).until(EC.presence_of_element_located((By.XPATH, '//div[@role="dialog"]//a[contains(normalize-space(text()), "Book a court")]')))
+                print(booking_link.text)
+                booking_link.click()
+                return True
+        return False
+
+    while try_to_book(target_date) is not True:
+        sleep(randint(5, 20))
+        pass
 
 
 if __name__ == '__main__':
-    # book_court()
-
     chrome_options = Options()
     chrome_options.add_argument("--start-maximized")
 
